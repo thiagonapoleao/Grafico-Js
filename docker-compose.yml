@@ -1,0 +1,50 @@
+version: "3.1"
+
+services: 
+    www:
+        build: .docker/php/.
+        container_name: www
+        ports: 
+            - "80:80"
+        volumes: 
+            - ./src:/var/www/html/
+        # Links serve para dizer que precisar subir o container especifico primeiro e depois esse container
+        links:
+            - db
+        # Para ligar com outros container
+        networks: 
+            - default
+    db:
+        image: mysql:8.0
+        container_name: mysql
+        ports: 
+            - "3306:3306"
+        # Command serve para executar um comando ao subir o container
+        command: --default-authentication-plugin=mysql_native_password
+        environment: 
+            MYSQL_DATABASE: mydb
+            MYSQL_USER: user
+            MYSQL_PASSWORD: 1234
+            MYSQL_ROOT_PASSWORD: 1234
+        volumes: 
+            # docker-entrypoint-initdb.d faz executar o sql automaticamente
+            - ./.docker/mysql/data:/docker-entrypoint-initdb.d
+            - ./.docker/mysql/conf:/etc/mysql/conf.d
+            # persistent. Serve para quando der um down no container, faz com que nada da tabela seja perdido
+            - persistent:/var/lib/mysql
+        networks: 
+            - default
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        links: 
+            - db:db
+        ports: 
+            - "8000:80"
+        environment: 
+            MYSQL_USER: user
+            MYSQL_PASSWORD: test
+            MYSQL_ROOT_PASSWORD: test
+
+volumes:
+    persistent:
